@@ -1,0 +1,462 @@
+cmake_minimum_required(VERSION 3.10)
+
+# Set the project name and version
+project(MyProject VERSION 1.0)
+
+# Specify the C++ standard
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+# Include external libraries
+include(FetchContent)
+
+# Example: Fetch and include the Boost library
+FetchContent_Declare(
+    boost
+    GIT_REPOSITORY https://github.com/boostorg/boost.git
+    GIT_TAG boost-1.76.0
+)
+FetchContent_MakeAvailable(boost)
+
+# Add the executable for the main application
+add_executable(MyApp src/main.cpp)
+
+# Link external libraries to the executable
+target_link_libraries(MyApp PRIVATE Boost::boost)
+
+# Add a library
+add_library(MyLibrary src/mylibrary.cpp)
+
+# Link external libraries to the library
+target_link_libraries(MyLibrary PRIVATE Boost::boost)
+
+# Include directories
+target_include_directories(MyApp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(MyLibrary PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+# OS-specific settings
+if(WIN32)
+        # Windows specific code
+        message(STATUS "Configuring for Windows")
+        target_compile_definitions(MyApp PRIVATE WINDOWS)
+        target_compile_definitions(MyLibrary PRIVATE WINDOWS)
+elseif(APPLE)
+        # macOS specific code
+        message(STATUS "Configuring for macOS")
+        target_compile_definitions(MyApp PRIVATE MACOS)
+        target_compile_definitions(MyLibrary PRIVATE MACOS)
+elseif(UNIX)
+        # Linux specific code
+        message(STATUS "Configuring for Linux")
+        target_compile_definitions(MyApp PRIVATE LINUX)
+        target_compile_definitions(MyLibrary PRIVATE LINUX)
+endif()
+# Add third-party libraries for Windows, macOS, and Linux
+if(WIN32)
+    # Windows specific third-party library
+    message(STATUS "Fetching third-party library for Windows")
+    execute_process(COMMAND git clone https://github.com/example/windows-thirdparty.git ${CMAKE_CURRENT_BINARY_DIR}/thirdparty/windows-thirdparty)
+    add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/thirdparty/windows-thirdparty)
+    target_link_libraries(MyApp PRIVATE windows-thirdparty)
+    target_link_libraries(MyLibrary PRIVATE windows-thirdparty)
+elseif(APPLE)
+    # macOS specific third-party library
+    message(STATUS "Fetching third-party library for macOS")
+    execute_process(COMMAND git clone https://github.com/example/macos-thirdparty.git ${CMAKE_CURRENT_BINARY_DIR}/thirdparty/macos-thirdparty)
+    add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/thirdparty/macos-thirdparty)
+    target_link_libraries(MyApp PRIVATE macos-thirdparty)
+    target_link_libraries(MyLibrary PRIVATE macos-thirdparty)
+elseif(UNIX)
+    # Linux specific third-party library
+    message(STATUS "Fetching third-party library for Linux")
+    execute_process(COMMAND git clone https://github.com/example/linux-thirdparty.git ${CMAKE_CURRENT_BINARY_DIR}/thirdparty/linux-thirdparty)
+    add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/thirdparty/linux-thirdparty)
+    target_link_libraries(MyApp PRIVATE linux-thirdparty)
+    target_link_libraries(MyLibrary PRIVATE linux-thirdparty)
+endif()
+# Add third-party libraries for Windows, macOS, and Linux
+if(WIN32)
+    # Windows specific third-party library
+    message(STATUS "Adding third-party library for Windows")
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/windows-thirdparty)
+    target_link_libraries(MyApp PRIVATE windows-thirdparty)
+    target_link_libraries(MyLibrary PRIVATE windows-thirdparty)
+elseif(APPLE)
+    # macOS specific third-party library
+    message(STATUS "Adding third-party library for macOS")
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/macos-thirdparty)
+    target_link_libraries(MyApp PRIVATE macos-thirdparty)
+    target_link_libraries(MyLibrary PRIVATE macos-thirdparty)
+elseif(UNIX)
+    # Linux specific third-party library
+    message(STATUS "Adding third-party library for Linux")
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/linux-thirdparty)
+    target_link_libraries(MyApp PRIVATE linux-thirdparty)
+    target_link_libraries(MyLibrary PRIVATE linux-thirdparty)
+endif()
+    
+# Installation rules
+install(TARGETS MyApp DESTINATION bin)
+install(TARGETS MyLibrary DESTINATION lib)
+install(DIRECTORY include/ DESTINATION include)
+
+# Enable testing
+enable_testing()
+
+# Add tests
+add_executable(MyAppTests tests/test_main.cpp)
+target_link_libraries(MyAppTests PRIVATE MyLibrary Boost::boost)
+add_test(NAME MyAppTests COMMAND MyAppTests)
+
+# Additional configurations can be added here
+# Set build type if not specified
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
+# Add custom commands and targets
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/generated_file.cpp
+    COMMAND ${CMAKE_COMMAND} -E echo "Generating file..."
+    COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_BINARY_DIR}/generated_file.cpp
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/input_file.txt
+    COMMENT "Generating generated_file.cpp"
+)
+
+add_custom_target(
+    GenerateFile ALL
+    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/generated_file.cpp
+)
+
+# Add the generated file to the project
+add_executable(GeneratedApp ${CMAKE_CURRENT_BINARY_DIR}/generated_file.cpp)
+target_link_libraries(GeneratedApp PRIVATE Boost::boost)
+
+# Add more tests
+add_executable(MyLibraryTests tests/test_mylibrary.cpp)
+target_link_libraries(MyLibraryTests PRIVATE MyLibrary Boost::boost)
+add_test(NAME MyLibraryTests COMMAND MyLibraryTests)
+
+# Add code coverage support
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_options(MyApp PRIVATE --coverage)
+    target_link_libraries(MyApp PRIVATE --coverage)
+    target_compile_options(MyLibrary PRIVATE --coverage)
+    target_link_libraries(MyLibrary PRIVATE --coverage)
+    target_compile_options(MyAppTests PRIVATE --coverage)
+    target_link_libraries(MyAppTests PRIVATE --coverage)
+    target_compile_options(MyLibraryTests PRIVATE --coverage)
+    target_link_libraries(MyLibraryTests PRIVATE --coverage)
+endif()
+
+# Add packaging support
+include(CPack)
+
+set(CPACK_PACKAGE_NAME "MyProject")
+set(CPACK_PACKAGE_VERSION "1.0")
+set(CPACK_PACKAGE_CONTACT "support@myproject.org")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "MyProject - A C++ project")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
+
+if(WIN32)
+    set(CPACK_GENERATOR "NSIS")
+    set(CPACK_NSIS_DISPLAY_NAME "MyProject")
+    set(CPACK_NSIS_PACKAGE_NAME "MyProject")
+    set(CPACK_NSIS_CONTACT "support@myproject.org")
+    set(CPACK_NSIS_MODIFY_PATH ON)
+elseif(APPLE)
+    set(CPACK_GENERATOR "DragNDrop")
+    set(CPACK_DMG_VOLUME_NAME "MyProject")
+    set(CPACK_DMG_FORMAT "UDBZ")
+elseif(UNIX)
+    set(CPACK_GENERATOR "DEB")
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "support@myproject.org")
+    set(CPACK_DEBIAN_PACKAGE_SECTION "devel")
+    set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.27)")
+endif()
+
+# Add documentation generation
+find_package(Doxygen)
+if(DOXYGEN_FOUND)
+    set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in)
+    set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
+
+    configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
+
+    add_custom_target(doc_doxygen ALL
+        COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Generating API documentation with Doxygen"
+        VERBATIM)
+endif()
+
+# Add support for sanitizers
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(SANITIZER_FLAGS "-fsanitize=address,undefined")
+    target_compile_options(MyApp PRIVATE ${SANITIZER_FLAGS})
+    target_link_libraries(MyApp PRIVATE ${SANITIZER_FLAGS})
+    target_compile_options(MyLibrary PRIVATE ${SANITIZER_FLAGS})
+    target_link_libraries(MyLibrary PRIVATE ${SANITIZER_FLAGS})
+    target_compile_options(MyAppTests PRIVATE ${SANITIZER_FLAGS})
+    target_link_libraries(MyAppTests PRIVATE ${SANITIZER_FLAGS})
+    target_compile_options(MyLibraryTests PRIVATE ${SANITIZER_FLAGS})
+    target_link_libraries(MyLibraryTests PRIVATE ${SANITIZER_FLAGS})
+endif()
+
+# Add more installation rules
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/generated_file.cpp DESTINATION src)
+install(FILES README.md LICENSE DESTINATION .)
+
+# Add more custom commands
+add_custom_command(
+    TARGET MyApp POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E echo "MyApp built successfully!"
+)
+
+add_custom_command(
+    TARGET MyLibrary POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E echo "MyLibrary built successfully!"
+)
+# Add support for code formatting checks
+find_program(CLANG_FORMAT "clang-format")
+if(CLANG_FORMAT)
+    file(GLOB_RECURSE ALL_CXX_SOURCE_FILES *.cpp *.h)
+    add_custom_target(
+        format
+        COMMAND ${CLANG_FORMAT} -i ${ALL_CXX_SOURCE_FILES}
+        COMMENT "Running clang-format on source files"
+    )
+endif()
+
+# Add support for static analysis
+find_program(CLANG_TIDY "clang-tidy")
+if(CLANG_TIDY)
+    set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY})
+endif()
+
+# Add support for cppcheck
+find_program(CPPCHECK "cppcheck")
+if(CPPCHECK)
+    add_custom_target(
+        cppcheck
+        COMMAND ${CPPCHECK} --enable=all --inconclusive --quiet ${CMAKE_CURRENT_SOURCE_DIR}/src
+        COMMENT "Running cppcheck on source files"
+    )
+endif()
+
+# Add support for include-what-you-use
+find_program(IWYU "include-what-you-use")
+if(IWYU)
+    set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE ${IWYU})
+endif()
+
+# Add support for precompiled headers
+target_precompile_headers(MyApp PRIVATE src/pch.h)
+target_precompile_headers(MyLibrary PRIVATE src/pch.h)
+
+# Add support for LTO (Link Time Optimization)
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT result OUTPUT output)
+    if(result)
+        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+    else()
+        message(WARNING "IPO is not supported: ${output}")
+    endif()
+endif()
+
+# Add support for cross-compilation
+if(CMAKE_CROSSCOMPILING)
+    message(STATUS "Cross-compiling for target platform")
+    # Add cross-compilation specific settings here
+endif()
+
+# Add support for environment variable configuration
+if(DEFINED ENV{MYPROJECT_ENV})
+    message(STATUS "Environment variable MYPROJECT_ENV is set to $ENV{MYPROJECT_ENV}")
+    # Add environment variable specific settings here
+endif()
+
+# Add support for custom build types
+set(CMAKE_CXX_FLAGS_CUSTOM "-O2 -Wall -Wextra")
+add_custom_target(
+    custom_build
+    COMMAND ${CMAKE_COMMAND} --build . --config Custom
+    COMMENT "Building with custom build type"
+)
+
+# Add support for custom toolchains
+if(DEFINED ENV{MYPROJECT_TOOLCHAIN})
+    set(CMAKE_TOOLCHAIN_FILE $ENV{MYPROJECT_TOOLCHAIN})
+    message(STATUS "Using custom toolchain file: ${CMAKE_TOOLCHAIN_FILE}")
+endif()
+
+# Add support for custom targets
+add_custom_target(
+    clean_all
+    COMMAND ${CMAKE_COMMAND} --build . --target clean
+    COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}
+    COMMENT "Cleaning all build files"
+)
+
+# Add support for custom commands
+add_custom_command(
+    TARGET MyApp POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E echo "MyApp built successfully!"
+)
+
+add_custom_command(
+    TARGET MyLibrary POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E echo "MyLibrary built successfully!"
+)
+
+# Add support for custom properties
+set_property(TARGET MyApp PROPERTY CXX_STANDARD 17)
+set_property(TARGET MyLibrary PROPERTY CXX_STANDARD 17)
+
+# Add support for custom configurations
+set(CMAKE_CONFIGURATION_TYPES "Debug;Release;Custom" CACHE STRING "Available build types" FORCE)
+
+# Add support for custom output directories
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+
+# Add support for custom install directories
+set(CMAKE_INSTALL_PREFIX ${CMAKE_BINARY_DIR}/install)
+
+# Add support for custom test configurations
+set(CTEST_OUTPUT_ON_FAILURE TRUE)
+set(CTEST_CUSTOM_MAXIMUM_PASSED_TEST_OUTPUT_SIZE 1024)
+set(CTEST_CUSTOM_MAXIMUM_FAILED_TEST_OUTPUT_SIZE 1024)
+
+# Add support for custom packaging configurations
+set(CPACK_PACKAGE_FILE_NAME "MyProject-${CPACK_PACKAGE_VERSION}-${CMAKE_SYSTEM_NAME}")
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "MyProject")
+set(CPACK_PACKAGE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/icon.png")
+
+# Add support for custom documentation configurations
+set(DOXYGEN_GENERATE_HTML YES)
+set(DOXYGEN_GENERATE_LATEX NO)
+set(DOXYGEN_EXTRACT_ALL YES)
+set(DOXYGEN_EXTRACT_PRIVATE YES)
+set(DOXYGEN_EXTRACT_STATIC YES)
+set(DOXYGEN_EXTRACT_LOCAL_CLASSES YES)
+set(DOXYGEN_EXTRACT_LOCAL_METHODS YES)
+
+# Add support for custom build options
+option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
+option(BUILD_TESTS "Build tests" ON)
+option(BUILD_DOCS "Build documentation" ON)
+
+# Add support for custom compiler options
+set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
+set(CMAKE_CXX_FLAGS_CUSTOM "-O2 -Wall -Wextra")
+
+# Add support for custom linker options
+set(CMAKE_EXE_LINKER_FLAGS_DEBUG "-g")
+set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-s")
+set(CMAKE_EXE_LINKER_FLAGS_CUSTOM "-Wl,--strip-all")
+
+# Add support for custom preprocessor definitions
+add_definitions(-DPROJECT_NAME="${PROJECT_NAME}")
+add_definitions(-DPROJECT_VERSION="${PROJECT_VERSION}")
+
+# Add support for custom include directories
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+include_directories(${CMAKE_CURRENT_BINARY_DIR}/include)
+
+# Add support for custom library directories
+link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib)
+link_directories(${CMAKE_CURRENT_BINARY_DIR}/lib)
+
+# Add support for custom source directories
+add_subdirectory(src)
+add_subdirectory(tests)
+add_subdirectory(docs)
+
+# Add support for custom build dependencies
+add_dependencies(MyApp MyLibrary)
+add_dependencies(MyAppTests MyLibraryTests)
+
+# Add support for custom build outputs
+set_target_properties(MyApp PROPERTIES OUTPUT_NAME "myapp")
+set_target_properties(MyLibrary PROPERTIES OUTPUT_NAME "mylibrary")
+
+# Add support for custom build inputs
+set_source_files_properties(src/main.cpp PROPERTIES COMPILE_FLAGS "-DMAIN")
+set_source_files_properties(src/mylibrary.cpp PROPERTIES COMPILE_FLAGS "-DMYLIBRARY")
+
+# Add support for custom build rules
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/custom_output.txt
+    COMMAND ${CMAKE_COMMAND} -E echo "Generating custom output..."
+    COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_BINARY_DIR}/custom_output.txt
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/custom_input.txt
+    COMMENT "Generating custom_output.txt"
+)
+
+add_custom_target(
+    CustomTarget ALL
+    DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/custom_output.txt
+)
+
+# Add support for custom build steps
+add_custom_command(
+    TARGET MyApp POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E echo "MyApp built successfully!"
+)
+
+add_custom_command(
+    TARGET MyLibrary POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E echo "MyLibrary built successfully!"
+)
+# Add support for custom packaging configurations for Windows
+if(WIN32)
+    set(CPACK_GENERATOR "NSIS")
+    set(CPACK_NSIS_DISPLAY_NAME "MyProject")
+    set(CPACK_NSIS_PACKAGE_NAME "MyProject")
+    set(CPACK_NSIS_CONTACT "support@myproject.org")
+    set(CPACK_NSIS_MODIFY_PATH ON)
+    set(CPACK_NSIS_MUI_ICON "${CMAKE_CURRENT_SOURCE_DIR}/icon.ico")
+    set(CPACK_NSIS_MUI_UNIICON "${CMAKE_CURRENT_SOURCE_DIR}/uninstall.ico")
+    set(CPACK_NSIS_HELP_LINK "http://www.myproject.org/help")
+    set(CPACK_NSIS_URL_INFO_ABOUT "http://www.myproject.org/about")
+    set(CPACK_NSIS_LICENSE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+    set(CPACK_NSIS_README_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
+    set(CPACK_NSIS_EXTRA_INSTALL_COMMANDS "WriteRegStr HKCU 'Software\\MyProject' 'InstallDir' '$INSTDIR'")
+    set(CPACK_NSIS_EXTRA_UNINSTALL_COMMANDS "DeleteRegKey HKCU 'Software\\MyProject'")
+endif()
+
+# Add support for custom packaging configurations for macOS
+if(APPLE)
+    set(CPACK_GENERATOR "DragNDrop")
+    set(CPACK_DMG_VOLUME_NAME "MyProject")
+    set(CPACK_DMG_FORMAT "UDBZ")
+    set(CPACK_DMG_BACKGROUND_IMAGE "${CMAKE_CURRENT_SOURCE_DIR}/background.png")
+    set(CPACK_DMG_DS_STORE_SETUP_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/dmg_ds_store_setup.scpt")
+    set(CPACK_DMG_DISABLE_APPLICATIONS_SYMLINK ON)
+    set(CPACK_DMG_PACKAGE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/icon.icns")
+    set(CPACK_DMG_README_FILE "${CMAKE_CURRENT_SOURCE_DIR}/README.md")
+    set(CPACK_DMG_LICENSE_FILE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
+endif()
+# Add support for custom packaging configurations for Linux
+if(UNIX AND NOT APPLE)
+    set(CPACK_GENERATOR "DEB;RPM")
+    
+    # DEB package configurations
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "support@myproject.org")
+    set(CPACK_DEBIAN_PACKAGE_SECTION "devel")
+    set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.27)")
+    set(CPACK_DEBIAN_PACKAGE_DESCRIPTION "MyProject - A C++ project")
+    
+    # RPM package configurations
+    set(CPACK_RPM_PACKAGE_LICENSE "MIT")
+    set(CPACK_RPM_PACKAGE_GROUP "Development/Tools")
+    set(CPACK_RPM_PACKAGE_REQUIRES "libc6 >= 2.27")
+    set(CPACK_RPM_PACKAGE_DESCRIPTION "MyProject - A C++ project")
+endif()
